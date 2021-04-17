@@ -1,0 +1,68 @@
+import TP2
+import numpy as np
+import matplotlib.pyplot as plt
+
+p = 5
+matrice_A = TP2.creer_matrice(p)
+matrice_B = TP2.creer_matrice_colonne(p)
+
+# print(matrice_A)
+# print(matrice_B)
+
+print("\nMéthode de Cholesky")
+solution1 = TP2.ResolCholesky(matrice_A, matrice_B)
+print("solution de AX = B avec Cholesky :", solution1)
+print("\nDécomposition LU")
+solution2 = TP2.Decomposition(matrice_A, matrice_B)
+print("Solution de AX = B avec la décomposition LU :", solution2)
+print("\nMéthode de Gauss")
+solution3 = TP2.Gauss(matrice_A, matrice_B)
+print("Solution de AX = B avec Gauss :", solution3)
+print("\nMéthode de Cholesky inversée")
+solution4 = TP2.resol_cholesky_inverse(matrice_A, matrice_B)
+print("solution de AX = B avec Cholesky inversée :", solution4)
+
+# ERREUR
+n = 750
+x, y1, y2, y3, y4 = TP2.calcul_erreur(n)
+# on trace err = f(n) avec ou sans échelle semilog
+plt.semilogy(x, y1, label="Gauss", color="red")
+plt.semilogy(x, y2, label="Décomposition LU", color="blue")
+plt.semilogy(x, y3, label="Cholesky", color="yellow")
+plt.semilogy(x, y4, label="Cholesky inversé", color="green")
+# légendes et titres
+plt.title("Erreur en fonction de la taille de la matrice")
+plt.xlabel("n, taille de la matrice")
+plt.ylabel("erreur")
+plt.legend()
+plt.show()
+
+# TEMPS
+n = 900
+x, y1, y2, y3, y4 = TP2.mesure_temps(n)
+
+# on trace t = f(n)
+plt.grid(True, which="both")
+plt.plot(x, y1, label="Gauss", color="red")
+plt.plot(x, y2, label="Décomposition LU", color="blue")
+plt.plot(x, y3, label="Cholesky", color="green")
+plt.plot(x, y4, label="Cholesky inversé", color="yellow")
+# légendes et titre
+plt.title("Temps en fonction de la taille de la matrice n")
+plt.xlabel("n")
+plt.ylabel("Temps(s)")
+plt.legend()
+plt.show()
+
+# on trace ln(t) en fonction de ln(n)
+plt.grid(True, which="both")
+plt.plot(np.log(x), np.log(y1), label="Gauss", color="red")
+plt.plot(np.log(x), np.log(y2), label="Décomposition LU", color="blue")
+plt.plot(np.log(x), np.log(y3), label="Cholesky", color="green")
+plt.plot(np.log(x), np.log(y4), label="Cholesky inversé", color="yellow")
+# légendes et titre
+plt.title("Temps en fonction de la taille de la matrice n")
+plt.xlabel("n")
+plt.ylabel("Temps(s)")
+plt.legend()
+plt.show()
