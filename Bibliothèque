@@ -1,0 +1,256 @@
+import numpy as np
+import random
+import math as ma
+import time
+
+
+def creer_matrice(n):
+    matrice_test = np.zeros(n*n)
+    matrice_test = matrice_test.reshape(n, n)
+    for i in range(matrice_test.shape[0]):
+        for j in range(matrice_test.shape[1]):
+            matrice_test[i, j] = random.randint(1, 10)
+    determinant = np.linalg.det(matrice_test)
+    while determinant == 0:
+        matrice_test = np.zeros(n*n)
+        matrice_test = matrice_test.reshape(n, n)
+        for i in range(matrice_test.shape[0]):
+            for j in range(matrice_test.shape[1]):
+                matrice_test[i, j] = random.randint(1, 10)
+        determinant = np.linalg.det(matrice_test)
+    matrice_transposee = np.transpose(matrice_test)
+    matrice = matrice_transposee.dot(matrice_test)
+    return matrice
+
+
+def creer_matrice_colonne(n):
+    matrice_colonne = np.zeros(n)
+    matrice_colonne = matrice_colonne.reshape(n, 1)
+    for i in range(matrice_colonne.shape[0]):
+        for j in range(matrice_colonne.shape[1]):
+            matrice_colonne[i, j] = random.randint(1, 10)
+    return matrice_colonne
+
+
+def ResolutionSystTriSup(Taug):
+    n = Taug.shape[0]
+    liste_x_resolus = []
+    x_n = Taug[n-1, n]/Taug[n-1, n-1]
+    liste_x_resolus.append(x_n)
+    liste_nb = []
+    for i in range(n-1):
+        liste_nb.append(i)
+    for i in reversed(liste_nb):
+        x_i = Taug[i, n]
+        cpt = -1
+        for j in range(i, n-1):
+            x_i = x_i-Taug[i, j+1]*liste_x_resolus[cpt]
+            cpt = cpt-1
+        x_i = x_i/Taug[i, i]
+        liste_x_resolus.append(x_i)
+    liste_x_resolus_ordonnes = []
+    for i in reversed(liste_x_resolus):
+        liste_x_resolus_ordonnes.append(i)
+    return liste_x_resolus_ordonnes
+
+
+def Cholesky(A):
+    n = A.shape[0]
+    L = np.zeros(n*n)
+    L = L.reshape(n, n)
+    for k in range(0, n):
+        s = 0
+        for j in range(0, k):
+            s = s+L[k, j]**2
+        L[k, k] = ma.sqrt(A[k, k]-s)
+        for i in range(k+1, n):
+            so = 0
+            for e in range(0, k):
+                so = so+(L[i, e]*L[k, e])
+            L[i, k] = (A[i, k]-so)/L[k, k]
+    Lt = np.transpose(L)
+    return L, Lt
+
+
+def cholesky_inverse(A):
+    n = A.shape[0]
+    L = np.zeros(n*n)
+    L = L.reshape(n, n)
+    for k in range(n-1, -1, -1):
+        s = 0
+        for i in range(k+1, n):
+            s = s+L[i, k]**2
+        L[k, k] = ma.sqrt(A[k, k]-s)
+        for j in range(k-1, -1, -1):
+            so = 0
+            for e in range(k+1, n):
+                so = so+(L[e, k]*L[e, j])
+            L[k, j] = (A[k, j]-so)/L[k, k]
+    Lt = np.transpose(L)
+    # print(L)
+    # print(Lt)
+    # print(np.dot(Lt, L))
+    return L, Lt
+
+
+def ReductionGauss(Aaug):
+    n = Aaug.shape[0]
+    for j in range(0, n):
+        for i in range(j+1, n):
+            g = Aaug[i, j]/Aaug[j, j]
+            Aaug[i] = Aaug[i]-g*Aaug[j]
+    return Aaug
+
+
+def DecompositionLU(A):
+    n = A.shape[0]
+    L = np.zeros(n*n)
+    L = L.reshape(n, n)
+    U = np.zeros(n*n)
+    U = U.reshape(n, n)
+    for i in range(0, n):
+        for j in range(0, n):
+            U[i, j] = A[i, j]
+    for j in range(0, n):
+        for i in range(j+1, n):
+            g = U[i, j]/U[j, j]
+            U[i] = U[i]-g*U[j]
+            L[i, j] = g
+            np.fill_diagonal(L, 1)
+    return L, U
+
+
+def ResolutionLU(L, U, B):
+    # descente : résoudre LY = B
+    n = L.shape[0]
+    liste_y_resolus = []
+    y_1 = B[0, 0]/L[0, 0]
+    liste_y_resolus.append(y_1)
+    for i in range(1, n):
+        y_i = B[i, 0]
+        cpt = 0
+        for j in range(0, i):
+            y_i = y_i-L[i, j]*liste_y_resolus[cpt]
+            cpt = cpt+1
+        y_i = y_i/L[i, i]
+        liste_y_resolus.append(y_i)
+    # remontée : résoudre UX = Y
+    matrice_y_resolus = np.zeros(n)
+    matrice_y_resolus = matrice_y_resolus.reshape(n, 1)
+    for i in range(matrice_y_resolus.shape[0]):
+        for j in range(matrice_y_resolus.shape[1]):
+            matrice_y_resolus[i, j] = liste_y_resolus[i]
+    Uaug = np.concatenate((U, matrice_y_resolus), axis=1)
+    liste_x_resolus = ResolutionSystTriSup(Uaug)
+    return liste_x_resolus  # solution de AX = B
+
+
+def ResolutionChoInverse(L, Lt, B):
+    # remontée : résoudre Lt.Y = B
+    Ltaug = np.concatenate((Lt, B), axis=1)
+    liste_y = ResolutionSystTriSup(Ltaug)
+    # descente : résoudre LX = Y
+    n = L.shape[0]
+    liste_x_resolus = []
+    x_1 = liste_y[0]/L[0, 0]
+    liste_x_resolus.append(x_1)
+    for i in range(1, n):
+        x_i = liste_y[i]
+        cpt = 0
+        for j in range(0, i):
+            x_i = x_i-L[i, j]*liste_x_resolus[cpt]
+            cpt = cpt+1
+        x_i = x_i/L[i, i]
+        liste_x_resolus.append(x_i)
+    return liste_x_resolus
+
+
+def Decomposition(A, B):
+    lower, upper = DecompositionLU(A)
+    solution = ResolutionLU(lower, upper, B)
+    return solution
+
+
+def ResolCholesky(A, B):
+    lower, upper = Cholesky(A)
+    sol = ResolutionLU(lower, upper, B)
+    return sol
+
+
+def Gauss(A, B):
+    Aaug = np.concatenate((A, B), axis=1)
+    Taug = ReductionGauss(Aaug)
+    solution = ResolutionSystTriSup(Taug)
+    return solution
+
+
+def resol_cholesky_inverse(A, B):
+    lower, upper = cholesky_inverse(A)
+    sol = ResolutionChoInverse(lower, upper, B)
+    return sol
+
+
+def calcul_erreur(n):
+    X = []
+    Y1 = []
+    Y2 = []
+    Y3 = []
+    Y4 = []
+    for i in range(10, n, 50):
+        print(i)
+        X.append(i)
+        A = creer_matrice(i)
+        B = creer_matrice_colonne(i)
+        # calcul des solutions avec chaque méthode
+        x1 = Gauss(A, B)
+        x2 = Decomposition(A, B)
+        x3 = ResolCholesky(A, B)
+        x4 = resol_cholesky_inverse(A, B)
+        # calcul de l'erreur
+        erreur_gauss = np.linalg.norm(np.dot(A, x1)-np.ravel(B))
+        erreur_lu = np.linalg.norm(np.dot(A, x2)-np.ravel(B))
+        erreur_chol = np.linalg.norm(np.dot(A, x3)-np.ravel(B))
+        erreur_chol_inv = np.linalg.norm(np.dot(A, x4)-np.ravel(B))
+        Y1.append(erreur_gauss)
+        Y2.append(erreur_lu)
+        Y3.append(erreur_chol)
+        Y4.append(erreur_chol_inv)
+    return X, Y1, Y2, Y3, Y4
+
+
+def mesure_temps(n):
+    X = []
+    Y1 = []
+    Y2 = []
+    Y3 = []
+    Y4 = []
+    for i in range(2, n, 50):
+        print(i)
+        X.append(i)
+        A = creer_matrice(i)
+        B = creer_matrice_colonne(i)
+        # temps avec Gauss
+        debut_temps_G = time.time()
+        Gauss(A, B)
+        fin_temps_G = time.time()
+        temps_total_G = fin_temps_G-debut_temps_G
+        Y1.append(temps_total_G)
+        # temps avec la décomposition LU
+        debut_temps_LU = time.time()
+        Decomposition(A, B)
+        fin_temps_LU = time.time()
+        temps_total_LU = fin_temps_LU-debut_temps_LU
+        Y2.append(temps_total_LU)
+        # temps avec la décomposition de Cholesky
+        debut_temps_chol = time.time()
+        ResolCholesky(A, B)
+        fin_temps_chol = time.time()
+        temps_total_chol = fin_temps_chol-debut_temps_chol
+        Y3.append(temps_total_chol)
+        # temps avec Cholesky inversé
+        debut_temps_chol_inv = time.time()
+        resol_cholesky_inverse(A, B)
+        fin_temps_chol_inv = time.time()
+        temps_total_chol_inv = fin_temps_chol_inv-debut_temps_chol_inv
+        Y4.append(temps_total_chol_inv)
+    return X, Y1, Y2, Y3, Y4
